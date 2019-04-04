@@ -9,10 +9,10 @@ except ImportError:
 	quit(1)
 
 # path to libs and headers
-include_dirs = [os.path.join('src', 'svm_rank'), numpy.get_include()]
+packagedir = os.path.join('src', 'svmrank')
+include_dirs = [os.path.join('src', 'c'), packagedir, numpy.get_include()]
 library_dirs = []
 libraries = []
-packagedir = os.path.join('src', 'cython')
 
 # version number
 with open(os.path.join(packagedir, '__init__.py'), 'r') as initfile:
@@ -22,14 +22,26 @@ with open(os.path.join(packagedir, '__init__.py'), 'r') as initfile:
 # set runtime libraries
 runtime_library_dirs = []
 extra_compile_args = []
-extra_link_args = []
+extra_link_args = ['-Wl,--undefined=main']
 if platform.system() in ['Linux', 'Darwin']:
-    extra_link_args.append(','.join(['-Wl', '-rpath'] + library_dirs))
+    for libdir in library_dirs:
+        extra_link_args.append(f'-Wl,-rpath,{libdir}')
 
 extensions = [
 	Extension('svmrank.svm_rank',
 	[
 	  os.path.join(packagedir, 'svm_rank.pyx'),
+      os.path.join('src', 'c', 'svm_struct_api.c'),
+      os.path.join('src', 'c', 'svm_struct_learn_custom.c'),
+      os.path.join('src', 'c', 'svm_struct', 'svm_struct_common.c'),
+      os.path.join('src', 'c', 'svm_struct', 'svm_struct_learn.c'),
+      # os.path.join('src', 'c', 'svm_struct', 'svm_struct_main.c'),  # main() here
+      # os.path.join('src', 'c', 'svm_struct', 'svm_struct_classify.c'),  # main() here
+      os.path.join('src', 'c', 'svm_light', 'svm_common.c'),
+      os.path.join('src', 'c', 'svm_light', 'svm_learn.c'),
+      # os.path.join('src', 'c', 'svm_light', 'svm_learn_main.c'),  # main() here
+      # os.path.join('src', 'c', 'svm_light', 'svm_classify.c'),  # main() here
+      os.path.join('src', 'c', 'svm_light', 'svm_hideo.c'),
 	],
 	include_dirs=include_dirs,
 	library_dirs=library_dirs,
@@ -39,7 +51,7 @@ extensions = [
 	extra_link_args=extra_link_args
 	)]
 
-extensions = cythonize(extensions)
+extensions = cythonize(extensions, compiler_directives={'language_level': 3})
 
 with open('README.md') as f:
     long_description = f.read()
