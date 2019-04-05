@@ -121,7 +121,10 @@ cdef class Model:
     def predict(self, xs, groups):
         return []
 
-    def save(self, filename="svm_struct_model"):
+    def write(self, filename="svm_struct_model"):
+        if not self.s_model.svm_model:
+            raise Exception("There is no model to write.")
+
         write_struct_model(str_sanitize(filename), &self.s_model, &self.s_parm)
 
 

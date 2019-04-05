@@ -1,4 +1,5 @@
 import numpy as np
+import tempfile
 import svmrank
 
 
@@ -74,4 +75,13 @@ def test_fit():
     m.fit(train_xs, train_ys, train_groups, params={
         '-c': 1,
     })
+
+def test_write():
+    m = svmrank.Model()
+    m.fit(train_xs, train_ys, train_groups, params={
+        '-c': 1,
+    })
+    fd, path = tempfile.mkstemp()
+    m.write(path)
+    print(f"model written to {path}")
 
