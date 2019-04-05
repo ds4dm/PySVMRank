@@ -9,20 +9,21 @@ except ImportError:
 	quit(1)
 
 # path to libs and headers
-packagedir = os.path.join('src', 'svmrank')
-include_dirs = [os.path.join('src', 'c'), packagedir, numpy.get_include()]
+package_dir = os.path.join('src', 'svmrank')
+svm_rank_sourcedir = os.path.join('src', 'c')
+include_dirs = [package_dir, svm_rank_sourcedir, numpy.get_include()]
 library_dirs = []
 libraries = []
 
 # version number
-with open(os.path.join(packagedir, '__init__.py'), 'r') as initfile:
+with open(os.path.join(package_dir, '__init__.py'), 'r') as initfile:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
                         initfile.read(), re.MULTILINE).group(1)
 
 # set runtime libraries
 runtime_library_dirs = []
-extra_compile_args = []
-extra_link_args = ['-Wl,--undefined=main']
+extra_compile_args = ['-O3', '-fomit-frame-pointer', '-ffast-math', '-Wall']
+extra_link_args = ['-lm', '-Wall']
 if platform.system() in ['Linux', 'Darwin']:
     for libdir in library_dirs:
         extra_link_args.append(f'-Wl,-rpath,{libdir}')
@@ -30,18 +31,19 @@ if platform.system() in ['Linux', 'Darwin']:
 extensions = [
 	Extension('svmrank.svm_rank',
 	[
-	  os.path.join(packagedir, 'svm_rank.pyx'),
-      os.path.join('src', 'c', 'svm_struct_api.c'),
-      os.path.join('src', 'c', 'svm_struct_learn_custom.c'),
-      os.path.join('src', 'c', 'svm_struct', 'svm_struct_common.c'),
-      os.path.join('src', 'c', 'svm_struct', 'svm_struct_learn.c'),
-      # os.path.join('src', 'c', 'svm_struct', 'svm_struct_main.c'),  # main() here
-      # os.path.join('src', 'c', 'svm_struct', 'svm_struct_classify.c'),  # main() here
-      os.path.join('src', 'c', 'svm_light', 'svm_common.c'),
-      os.path.join('src', 'c', 'svm_light', 'svm_learn.c'),
-      # os.path.join('src', 'c', 'svm_light', 'svm_learn_main.c'),  # main() here
-      # os.path.join('src', 'c', 'svm_light', 'svm_classify.c'),  # main() here
-      os.path.join('src', 'c', 'svm_light', 'svm_hideo.c'),
+	  os.path.join(package_dir, 'svm_rank.pyx'),
+      os.path.join(package_dir, 'utilities.c'),
+      os.path.join(svm_rank_sourcedir, 'svm_struct_api.c'),
+      os.path.join(svm_rank_sourcedir, 'svm_struct_learn_custom.c'),
+      os.path.join(svm_rank_sourcedir, 'svm_struct', 'svm_struct_common.c'),
+      os.path.join(svm_rank_sourcedir, 'svm_struct', 'svm_struct_learn.c'),
+      # os.path.join(svm_rank_sourcedir, 'svm_struct', 'svm_struct_main.c'),  # main() here
+      # os.path.join(svm_rank_sourcedir, 'svm_struct', 'svm_struct_classify.c'),  # main() here
+      os.path.join(svm_rank_sourcedir, 'svm_light', 'svm_common.c'),
+      os.path.join(svm_rank_sourcedir, 'svm_light', 'svm_learn.c'),
+      # os.path.join(svm_rank_sourcedir, 'svm_light', 'svm_learn_main.c'),  # main() here
+      # os.path.join(svm_rank_sourcedir, 'svm_light', 'svm_classify.c'),  # main() here
+      os.path.join(svm_rank_sourcedir, 'svm_light', 'svm_hideo.c'),
 	],
 	include_dirs=include_dirs,
 	library_dirs=library_dirs,
@@ -67,6 +69,6 @@ setup(
     license = 'MIT',
     ext_modules = extensions,
     packages = ['svmrank'],
-    package_dir = {'svmrank': packagedir},
+    package_dir = {'svmrank': package_dir},
     package_data = {'svmrank': ['svm_rank.pyx', 'svm_rank.pxd', '*.pxi']}
 )
