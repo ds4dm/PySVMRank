@@ -69,7 +69,7 @@ cdef class Model:
             argv[i] = arg
 
         # verbosity and struct_verbosity are globally defined
-        read_input_parameters(argc, argv, &verbosity, &struct_verbosity,
+        read_input_parameters_fit(argc, argv, &verbosity, &struct_verbosity,
                               &self.s_parm, &self.l_parm, &self.k_parm,
                               &alg_type)
 
@@ -118,7 +118,38 @@ cdef class Model:
         if struct_verbosity >= 1:
             print("Training done", flush=True)
 
-    def predict(self, xs, groups):
+    def predict(self, xs, groups, params=None):
+        cdef int i, argc
+        cdef char ** argv
+
+        if params is None:
+            params = {}
+
+        if groups.ndim == 2:
+            groups = np.squeeze(groups, axis=1)
+
+        if xs.ndim != 2:
+            raise ValueError(f"2 dimensions expected for argument 'xs' (has {xs.ndim})")
+        if groups.ndim != 1:
+            raise ValueError(f"1 dimension expected for argument 'groups' (has {groups.ndim})")
+
+        xs = xs.astype(np.float32, copy=False)
+        groups = groups.astype(np.int32, copy=False)
+
+        # command-line style parameters
+        args = [str_sanitize(arg) for k, v in params.items() for arg in [k, v]]
+        argc = len(args)
+        argv = <char**> my_malloc(sizeof(char*) * argc)
+        for i, arg in enumerate(args):
+            argv[i] = arg
+
+        # verbosity and struct_verbosity are globally defined
+        read_input_parameters_predict(argc, argv, &self.s_parm,
+                &verbosity, &struct_verbosity)
+
+        free(argv)
+        del args  # reference should be kept until now
+
         return []
 
     def write(self, filename="svm_struct_model"):

@@ -85,3 +85,10 @@ def test_write():
     m.write(path)
     print(f"model written to {path}")
 
+def test_predict():
+    m = svmrank.Model()
+    m.fit(train_xs, train_ys, train_groups, params={
+        '-c': 1,
+    })
+    preds = m.predict(test_xs, test_groups)
+
