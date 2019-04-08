@@ -44,7 +44,7 @@ SAMPLE build_sample(double * labels, DOC ** instances, int n, STRUCT_LEARN_PARM 
   }
   qid=instances[i]->queryid;
   sample.n++;
-  examples=(EXAMPLE *)realloc(examples,sizeof(EXAMPLE)*sample.n);
+  examples=(EXAMPLE *)my_realloc(examples,sizeof(EXAMPLE)*sample.n);
   x=&examples[sample.n-1].x;
   y=&examples[sample.n-1].y;
   x->doc=NULL;
@@ -56,9 +56,9 @@ SAMPLE build_sample(double * labels, DOC ** instances, int n, STRUCT_LEARN_PARM 
     }
     x->totdoc++;
     y->totdoc++;
-    x->doc=(DOC **)realloc(x->doc,sizeof(DOC *)*x->totdoc);
+    x->doc=(DOC **)my_realloc(x->doc,sizeof(DOC *)*x->totdoc);
     x->doc[x->totdoc-1]=instances[i];
-    y->class=(double *)realloc(y->class,sizeof(double)*y->totdoc);
+    y->class=(double *)my_realloc(y->class,sizeof(double)*y->totdoc);
     y->class[y->totdoc-1]=labels[i];
   }
   sample.examples=examples;
@@ -123,7 +123,7 @@ SAMPLE build_sample(double * labels, DOC ** instances, int n, STRUCT_LEARN_PARM 
 }
 
 // see original read_input_parameters()
-void read_input_parameters_fit(int argc,char *argv[],
+int read_input_parameters(int argc,char *argv[],
 			   long *verbosity,long *struct_verbosity, 
 			   STRUCT_LEARN_PARM *struct_parm,
 			   LEARN_PARM *learn_parm, KERNEL_PARM *kernel_parm,
@@ -178,7 +178,6 @@ void read_input_parameters_fit(int argc,char *argv[],
   for(i=0;(i<argc) && ((argv[i])[0] == '-');i++) {
     switch ((argv[i])[1]) 
       { 
-     case '?': print_help_fit(); exit(0);
       case 'a': i++; strcpy(learn_parm->alphafile,argv[i]); break;
       case 'c': i++; struct_parm->C=atof(argv[i]); break;
       case 'p': i++; struct_parm->slack_norm=atol(argv[i]); break;
@@ -204,8 +203,7 @@ void read_input_parameters_fit(int argc,char *argv[],
       case 'v': i++; (*struct_verbosity)=atol(argv[i]); break;
       case 'y': i++; (*verbosity)=atol(argv[i]); break;
       default: printf("\nUnrecognized option %s!\n\n",argv[i]);
-	       print_help_fit();
-	       exit(0);
+	       return 0;
       }
   }
   if(learn_parm->svm_iter_to_shrink == -9999) {
@@ -220,153 +218,83 @@ void read_input_parameters_fit(int argc,char *argv[],
   if((learn_parm->skip_final_opt_check) 
      && (learn_parm->remove_inconsistent)) {
     printf("\nIt is necessary to do the final optimality check when removing inconsistent \nexamples.\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }    
   if((learn_parm->svm_maxqpsize<2)) {
     printf("\nMaximum size of QP-subproblems not in valid range: %ld [2..]\n",learn_parm->svm_maxqpsize); 
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if((learn_parm->svm_maxqpsize<learn_parm->svm_newvarsinqp)) {
     printf("\nMaximum size of QP-subproblems [%ld] must be larger than the number of\n",learn_parm->svm_maxqpsize); 
     printf("new variables [%ld] entering the working set in each iteration.\n",learn_parm->svm_newvarsinqp); 
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(learn_parm->svm_iter_to_shrink<1) {
     printf("\nMaximum number of iterations for shrinking not in valid range: %ld [1,..]\n",learn_parm->svm_iter_to_shrink);
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(struct_parm->C<0) {
     printf("\nYou have to specify a value for the parameter '-c' (C>0)!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(((*alg_type) < 0) || (((*alg_type) > 5) && ((*alg_type) != 9))) {
     printf("\nAlgorithm type must be either '0', '1', '2', '3', '4', or '9'!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(learn_parm->transduction_posratio>1) {
     printf("\nThe fraction of unlabeled examples to classify as positives must\n");
     printf("be less than 1.0 !!!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(learn_parm->svm_costratio<=0) {
     printf("\nThe COSTRATIO parameter must be greater than zero!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(struct_parm->epsilon<=0) {
     printf("\nThe epsilon parameter must be greater than zero!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if((struct_parm->ccache_size<=0) && ((*alg_type) == 4)) {
     printf("\nThe cache size must be at least 1!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(((struct_parm->batch_size<=0) || (struct_parm->batch_size>100))  
      && ((*alg_type) == 4)) {
     printf("\nThe batch size must be in the interval ]0,100]!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if((struct_parm->slack_norm<1) || (struct_parm->slack_norm>2)) {
     printf("\nThe norm of the slacks must be either 1 (L1-norm) or 2 (L2-norm)!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if((struct_parm->loss_type != SLACK_RESCALING) 
      && (struct_parm->loss_type != MARGIN_RESCALING)) {
     printf("\nThe loss type must be either 1 (slack rescaling) or 2 (margin rescaling)!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if(learn_parm->rho<0) {
     printf("\nThe parameter rho for xi/alpha-estimates and leave-one-out pruning must\n");
     printf("be greater than zero (typically 1.0 or 2.0, see T. Joachims, Estimating the\n");
     printf("Generalization Performance of an SVM Efficiently, ICML, 2000.)!\n\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
   if((learn_parm->xa_depth<0) || (learn_parm->xa_depth>100)) {
     printf("\nThe parameter depth for ext. xi/alpha-estimates must be in [0..100] (zero\n");
     printf("for switching to the conventional xa/estimates described in T. Joachims,\n");
     printf("Estimating the Generalization Performance of an SVM Efficiently, ICML, 2000.)\n");
-    wait_any_key();
-    print_help_fit();
-    exit(0);
+    return 0;
   }
 
-  parse_struct_parameters(struct_parm);
+  return 1;
 }
 
-// see original read_input_parameters()
-void read_input_parameters_predict(int argc, char *argv[],
-			   STRUCT_LEARN_PARM *struct_parm,
-			   long *verbosity, long *struct_verbosity)
+void print_help()
 {
-  long i;
-  
-  /* set default */
-  (*verbosity)=0;/*verbosity for svm_light*/
-  (*struct_verbosity)=1; /*verbosity for struct learning portion*/
-  struct_parm->custom_argc=0;
-
-  for(i=0;(i<argc) && ((argv[i])[0] == '-');i++) {
-    switch ((argv[i])[1]) 
-      { 
-          case 'h': print_help_predict(); exit(0);
-      case '?': print_help_predict(); exit(0);
-      case '-': strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);i++; strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);break; 
-      case 'v': i++; (*struct_verbosity)=atol(argv[i]); break;
-      case 'y': i++; (*verbosity)=atol(argv[i]); break;
-      default: printf("\nUnrecognized option %s!\n\n",argv[i]);
-	       print_help_predict();
-	       exit(0);
-      }
-  }
-
-  parse_struct_parameters_classify(struct_parm);
-}
-
-void wait_any_key()
-{
-  printf("\n(more)\n");
-  (void)getc(stdin);
-}
-
-void print_help_fit()
-{
-  printf("\nSVM-struct learning module: %s, %s, %s\n",INST_NAME,INST_VERSION,INST_VERSION_DATE);
+  printf("\nSVM-struct module: %s, %s, %s\n",INST_NAME,INST_VERSION,INST_VERSION_DATE);
   printf("   includes SVM-struct %s for learning complex outputs, %s\n",STRUCT_VERSION,STRUCT_VERSION_DATE);
   printf("   includes SVM-light %s quadratic optimizer, %s\n",VERSION,VERSION_DATE);
   copyright_notice();
-  printf("Arguments:\n");
-  printf("         example_file-> file with training data\n");
-  printf("         model_file  -> file to store learned decision rule in\n");
-
   printf("General Options:\n");
-  printf("         -?          -> this help\n");
   printf("         -v [0..3]   -> verbosity level (default 1)\n");
   printf("         -y [0..3]   -> verbosity level for svm_light (default 0)\n");
   printf("Learning Options:\n");
@@ -428,7 +356,6 @@ void print_help_fit()
   printf("                        (in the same order as in the training set)\n");
   printf("Application-Specific Options:\n");
   print_struct_help();
-  wait_any_key();
 
   printf("\nMore details in:\n");
   printf("[1] T. Joachims, Learning to Align Sequences: A Maximum Margin Aproach.\n");
@@ -446,14 +373,22 @@ void print_help_fit()
   printf("    SVMs, Machine Learning Journal, to appear.\n");
 }
 
-void print_help_predict()
-{
-  printf("\nSVM-struct classification module: %s, %s, %s\n",INST_NAME,INST_VERSION,INST_VERSION_DATE);
-  printf("   includes SVM-struct %s for learning complex outputs, %s\n",STRUCT_VERSION,STRUCT_VERSION_DATE);
-  printf("   includes SVM-light %s quadratic optimizer, %s\n",VERSION,VERSION_DATE);
-  copyright_notice();
-  printf("options: -h         -> this help\n");
-  printf("         -v [0..3]  -> verbosity level (default 2)\n\n");
+void * my_calloc(size_t num_elements, size_t element_size) {
+    void * ptr = calloc(num_elements, element_size);
 
-  print_struct_help_classify();
+    if (!ptr) {
+        perror ("Out of memory!\n"); 
+        exit (1); 
+    }
+    return ptr;
+}
+
+void * my_realloc(void * ptr, size_t size) {
+    ptr = realloc(ptr, size);
+
+    if (!ptr) {
+        perror ("Out of memory!\n"); 
+        exit (1); 
+    }
+    return ptr;
 }
