@@ -120,7 +120,7 @@ cdef class Model:
         elif self.alg_type == 9:
             svm_learn_struct_joint_custom(sample, &self.s_parm, &self.l_parm, &self.k_parm, &self.s_model)
         else:
-            exit(1)
+            raise ValueError("Incorrect algorithm type: '{self.alg_type}'")
 
         # copy model, in order to detach support vectors out of sample
         if struct_verbosity >= 1:
