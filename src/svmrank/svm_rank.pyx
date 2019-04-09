@@ -180,9 +180,43 @@ cdef class Model:
 
         return preds
 
-    def loss(self, ys, preds):
-        #   l=loss(testsample.examples[i].y,y,&sparm);
-        raise NotImplementedError
+    def loss(self, ys, preds, groups):
+        cdef SAMPLE y_sample, pred_sample
+        cdef int i
+        cdef double avg_loss
+
+        if ys.ndim == 2:
+            ys = np.squeeze(ys, axis=1)
+        if groups.ndim == 2:
+            groups = np.squeeze(groups, axis=1)
+
+        if ys.ndim != 1:
+            raise ValueError(f"1 dimension expected for argument 'ys' (has {ys.ndim})")
+        if groups.ndim != 1:
+            raise ValueError(f"1 dimension expected for argument 'groups' (has {groups.ndim})")
+
+        assert ys.shape[0] == groups.shape[0] and ys.shape[0] == groups.shape[0]
+
+        ys = ys.astype(np.float32, copy=False)
+        preds = preds.astype(np.float32, copy=False)
+        groups = groups.astype(np.int32, copy=False)
+
+        y_sample = read_struct_examples(None, ys, groups, &self.s_parm)
+        pred_sample = read_struct_examples(None, preds, groups, &self.s_parm)
+
+        avg_loss = 0
+        for i in range(y_sample.n):
+            pred_sample.examples[i].y.loss = -1  # trigger loss computation
+            avg_loss += loss(
+                    y_sample.examples[i].y,
+                    pred_sample.examples[i].y,
+                    &self.s_parm)
+        avg_loss /= y_sample.n
+
+        free_struct_sample(y_sample)
+        free_struct_sample(pred_sample)
+
+        return avg_loss
 
     def read(self, filename="svm_struct_model"):
         self.s_model = read_struct_model(str_sanitize(filename), &self.s_parm)
@@ -208,8 +242,10 @@ cdef SAMPLE read_struct_examples(
     cdef double  * labels
     cdef int       n, d, i, j
 
-    n = xs.shape[0]
-    d = xs.shape[1]
+    assert groups is not None and (xs is not None or ys is not None)
+
+    n = xs.shape[0] if xs is not None else ys.shape[0]
+    d = xs.shape[1] if xs is not None else 0
 
     # allocate instances and labels
     instances = <DOC**> malloc(sizeof(DOC*) * n)

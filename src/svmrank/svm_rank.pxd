@@ -141,6 +141,7 @@ cdef extern from "svm_struct_api.h":
             PATTERN x, STRUCTMODEL *sm, 
             STRUCT_LEARN_PARM *sparm)
     void free_label(LABEL y)
+    double loss(LABEL y, LABEL pred, STRUCT_LEARN_PARM *sparm)
 
 cdef extern from "utilities.h":
 
