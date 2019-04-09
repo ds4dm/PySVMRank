@@ -77,7 +77,7 @@ cdef class Model:
         cdef SAMPLE sample
 
         if ys.ndim == 2:
-            ys = np.squeeze(xs, axis=1)
+            ys = np.squeeze(ys, axis=1)
         if groups.ndim == 2:
             groups = np.squeeze(groups, axis=1)
 
