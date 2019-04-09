@@ -73,6 +73,10 @@ cdef class Model:
         if error:
             raise ValueError("Illegal parameters. See svmrank.help() for a list of available parameters.")
 
+        parse_struct_parameters_classify(&self.s_parm)
+        parse_struct_parameters(&self.s_parm)
+
+
     def fit(self, xs, ys, groups):
         cdef SAMPLE sample
 
@@ -91,7 +95,6 @@ cdef class Model:
         assert xs.shape[0] == groups.shape[0] and xs.shape[0] == ys.shape[0]
 
         self._apply_params()
-        parse_struct_parameters(&self.s_parm)
 
         xs = xs.astype(np.float32, copy=False)
         ys = ys.astype(np.float32, copy=False)
@@ -157,9 +160,6 @@ cdef class Model:
 
         assert xs.shape[0] == groups.shape[0]
 
-        self._apply_params()
-        parse_struct_parameters_classify(&self.s_parm)
-
         xs = xs.astype(np.float32, copy=False)
         groups = groups.astype(np.int32, copy=False)
 
@@ -173,6 +173,7 @@ cdef class Model:
             y = classify_struct_example(sample.examples[i].x, &self.s_model, &self.s_parm)
             for j in range(y.totdoc):
                 preds[k] = y._class[j]
+                k += 1
             free_label(y)
 
         free_struct_sample(sample)
