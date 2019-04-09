@@ -163,14 +163,10 @@ cdef class Model:
         xs = xs.astype(np.float32, copy=False)
         groups = groups.astype(np.int32, copy=False)
 
-        if struct_verbosity >= 1:
-            print("Loading test examples...", flush=True)
-
+        # Loading test examples
         sample = read_struct_examples(xs, None, groups, &self.s_parm)
 
-        if struct_verbosity >= 1:
-            print("Ranking test examples...")
-
+        # Ranking test examples
         preds = np.empty(groups.shape, np.float32)
         k = 0
         for i in range(sample.n):
@@ -188,8 +184,6 @@ cdef class Model:
         raise NotImplementedError
 
     def read(self, filename="svm_struct_model"):
-        if struct_verbosity >= 1:
-            print("Reading model", flush=True)
         self.s_model = read_struct_model(str_sanitize(filename), &self.s_parm)
 
         if self.s_model.svm_model.kernel_parm.kernel_type == LINEAR:
@@ -200,8 +194,6 @@ cdef class Model:
         if self.s_model.svm_model is NULL:
             raise ValueError("There is no model to write.")
 
-        if struct_verbosity >= 1:
-            print("Writing model", flush=True)
         write_struct_model(str_sanitize(filename), &self.s_model, &self.s_parm)
 
 
