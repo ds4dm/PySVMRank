@@ -101,15 +101,9 @@ cdef class Model:
         groups = groups.astype(np.int32, copy=False)
 
         # load (copy) training dataset
-        if struct_verbosity >= 1:
-            print("Loading training examples", flush=True)
-
         sample = read_struct_examples(xs, ys, groups, &self.s_parm)
 
         # train
-        if struct_verbosity >= 1:
-            print("Training", flush=True)
-
         if self.alg_type == 0:
             svm_learn_struct(sample, &self.s_parm, &self.l_parm, &self.k_parm, &self.s_model, NSLACK_ALG)
         elif self.alg_type == 1:
@@ -126,29 +120,23 @@ cdef class Model:
             raise ValueError("Incorrect algorithm type: '{self.alg_type}'")
 
         # copy model, in order to detach support vectors out of sample
-        if struct_verbosity >= 1:
-            print("Detaching model from training examples (support vectors)", flush=True)
-
         cdef MODEL * tmp = self.s_model.svm_model
         self.s_model.svm_model = copy_model(tmp)
         free_model(tmp, 0)
 
         # release training sample
-        if struct_verbosity >= 1:
-            print("Releasing training examples", flush=True)
-
         free_struct_sample(sample)
 
-        if struct_verbosity >= 1:
-            print("Training done", flush=True)
-
-    def predict(self, xs, groups):
+    def predict(self, xs, groups=None):
         cdef SAMPLE sample
         cdef int i, j, k
         cdef LABEL y
 
         if self.s_model.svm_model is NULL:
             raise ValueError("There is no model to use for prediction.")
+
+        if groups is None:
+            groups = np.ones(xs.shape[0], dtype=int)
 
         if groups.ndim == 2:
             groups = np.squeeze(groups, axis=1)
