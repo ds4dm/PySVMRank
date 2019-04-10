@@ -130,6 +130,8 @@ cdef class Model:
         # release training sample
         free_struct_sample(sample)
 
+        return self
+
     def predict(self, xs, groups=None):
         cdef SAMPLE sample
         cdef int i, j, k
@@ -218,6 +220,8 @@ cdef class Model:
         if self.s_model.svm_model.kernel_parm.kernel_type == LINEAR:
           add_weight_vector_to_linear_model(self.s_model.svm_model)
           self.s_model.w = self.s_model.svm_model.lin_weights
+
+        return self
 
     def write(self, filename="svm_struct_model"):
         if self.s_model.svm_model is NULL:
