@@ -80,6 +80,9 @@ cdef class Model:
     def fit(self, xs, ys, groups):
         cdef SAMPLE sample
 
+        if self.s_model.svm_model is not NULL:
+            raise ValueError("Fitting over a pre-existing model is forbidden.")
+
         if ys.ndim == 2:
             ys = np.squeeze(ys, axis=1)
         if groups.ndim == 2:
@@ -207,6 +210,9 @@ cdef class Model:
         return avg_loss
 
     def read(self, filename="svm_struct_model"):
+        if self.s_model.svm_model is not NULL:
+            raise ValueError("Reading over a pre-existing model is forbidden.")
+
         self.s_model = read_struct_model(str_sanitize(filename), &self.s_parm)
 
         if self.s_model.svm_model.kernel_parm.kernel_type == LINEAR:
